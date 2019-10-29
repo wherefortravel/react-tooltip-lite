@@ -42,6 +42,8 @@ class Tooltip extends React.Component {
     tipContentClassName: PropTypes.string,
     useDefaultStyles: PropTypes.bool,
     useHover: PropTypes.bool,
+    hideOnScroll: PropTypes.bool,
+    container: PropTypes.node,
   }
 
   static defaultProps = {
@@ -66,6 +68,7 @@ class Tooltip extends React.Component {
     tipContentClassName: undefined,
     useDefaultStyles: false,
     useHover: true,
+    hideOnScroll: false,
   }
 
   static getDerivedStateFromProps(nextProps) {
@@ -106,6 +109,11 @@ class Tooltip extends React.Component {
 
     window.addEventListener('resize', this.listenResizeScroll);
     window.addEventListener('scroll', this.listenResizeScroll);
+
+    if (this.props.container) {
+      this.props.container.addEventListener('resize', this.listenResizeScroll)
+      this.props.container.addEventListener('scroll', this.listenResizeScroll)
+    }
   }
 
   componentDidUpdate(_, prevState) {
@@ -129,6 +137,11 @@ class Tooltip extends React.Component {
     window.removeEventListener('scroll', this.listenResizeScroll);
     clearTimeout(this.debounceTimeout);
     clearTimeout(this.hoverTimeout);
+
+    if (this.props.container) {
+      this.props.container.removeEventListener('resize', this.listenResizeScroll)
+      this.props.container.removeEventListener('scroll', this.listenResizeScroll)
+    }
   }
 
   listenResizeScroll() {
@@ -138,11 +151,18 @@ class Tooltip extends React.Component {
   }
 
   handleResizeScroll() {
-    if (this.state.showTip) {
-      // if we're showing the tip and the resize was actually a signifigant change, then setState to re-render and calculate position
-      const clientWidth = Math.round(document.documentElement.clientWidth / resizeThreshold) * resizeThreshold;
-      this.setState({ clientWidth });
+    if (!this.state.showTip) {
+      return
     }
+
+    if (this.props.hideOnScroll) {
+      this.hideTip()
+    }
+
+    // if we're showing the tip and the resize was actually a signifigant change, then setState to re-render and calculate position
+    const clientWidth =
+      Math.round(document.documentElement.clientWidth / resizeThreshold) * resizeThreshold
+    this.setState({ clientWidth })
   }
 
   toggleTip() {
